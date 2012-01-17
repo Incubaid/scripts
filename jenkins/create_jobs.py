@@ -176,7 +176,8 @@ def main():
 
     username = options.username
     password = options.password
-    address = options.address or os.environ['JENKINS_URL']
+    address = options.address or os.environ.get('JENKINS_URL', None) \
+        or os.environ['HUDSON_URL']
 
     if (username and not password) or (not username and password):
         raise parser.error('Username and password are not mutually exclusive')
