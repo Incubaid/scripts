@@ -50,6 +50,29 @@ import autojenkins.jobs
 TEMPLATE_NAME = '_%s-template'
 LOGGER = logging.getLogger('create_jobs')
 
+try:
+    check_output = subprocess.check_output
+except AttributeError:
+    # subprocess.check_output as implemented in Python 2.7.2
+    def check_output(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError(
+                'stdout argument not allowed, it will be overridden.')
+
+        process = subprocess.Popen(
+            stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd, output=output)
+
+        return output
+
+
 def job_exists(jenkins, name):
     '''Check whether a given job exists
 
@@ -91,7 +114,7 @@ def list_branches(remote, pattern):
 
     LOGGER.info('Listing Git branches')
 
-    output = subprocess.check_output(('git', 'ls-remote', remote))
+    output = check_output(('git', 'ls-remote', remote))
     lines = output.splitlines()
 
     for line in lines:
